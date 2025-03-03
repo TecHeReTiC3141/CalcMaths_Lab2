@@ -9,10 +9,9 @@ export default function App() {
         [ '0', '0', '0', '0' ],
     ]);
     const [ accuracy, setAccuracy ] = useState(0.001);
-    const [ solution, setSolution ] = useState<number[] | null>(null);
-    const [ deviations, setDeviations ] = useState<number[] | null>(null);
+    const [ solution, setSolution ] = useState<number[][] | null>(null);
+    const [ deviations, setDeviations ] = useState<number[][] | null>(null);
     const [ itersForSolution, setItersForSolution ] = useState(-1);
-    const [ hasConvenge, setHasConvenge ] = useState(true);
 
     return (
         <div className="container mx-auto p-4">
@@ -73,17 +72,16 @@ export default function App() {
                     className="btn"
                     disabled={matrCoeffs.length === 0}
                     onClick={() => {
-                        const [ solution, iters, deviations, hasConvenge ] = calculateEquationSolution(matrCoeffs, accuracy)
+                        const [ solution, iters, deviations ] = calculateEquationSolution(matrCoeffs, accuracy)
                         console.log("SOLUTION", solution, iters, deviations)
                         setSolution(solution);
                         setItersForSolution(iters)
                         setDeviations(deviations)
-                        setHasConvenge(hasConvenge)
                     }}
                 >
                     Find solution
                 </button>
-                <Solution solution={solution} itersForSolution={itersForSolution} deviations={deviations} hasConvenged={hasConvenge}/>
+                <Solution solution={solution} itersForSolution={itersForSolution} deviations={deviations}/>
             </div>
         </div>
 
