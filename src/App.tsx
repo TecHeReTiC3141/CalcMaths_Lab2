@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { calculateEquationSolution } from "./utils.ts";
+import { calculateEquationSolution, generateRandomMatrix } from "./utils.ts";
 import { CoeffUploader, Equation, Solution } from "./components";
 
 export default function App() {
@@ -12,6 +12,7 @@ export default function App() {
     const [ solution, setSolution ] = useState<number[] | null>(null);
     const [ deviations, setDeviations ] = useState<number[] | null>(null);
     const [ itersForSolution, setItersForSolution ] = useState(-1);
+    const [ hasConvenge, setHasConvenge ] = useState(true);
 
     return (
         <div className="container mx-auto p-4">
@@ -50,6 +51,13 @@ export default function App() {
                     >
                         -
                     </button>
+                    <button
+                        className="btn"
+                        disabled={matrCoeffs.length === 0}
+                        onClick={() => generateRandomMatrix(setMatrCoeffs, matrCoeffs.length)}
+                    >
+                        Get random
+                    </button>
                 </div>
             </div>
                 <CoeffUploader setMatrCoeffs={setMatrCoeffs}  setAccuracy={setAccuracy}/>
@@ -65,16 +73,17 @@ export default function App() {
                     className="btn"
                     disabled={matrCoeffs.length === 0}
                     onClick={() => {
-                        const [ solution, iters, deviations ] = calculateEquationSolution(matrCoeffs, accuracy)
+                        const [ solution, iters, deviations, hasConvenge ] = calculateEquationSolution(matrCoeffs, accuracy)
                         console.log("SOLUTION", solution, iters, deviations)
                         setSolution(solution);
                         setItersForSolution(iters)
                         setDeviations(deviations)
+                        setHasConvenge(hasConvenge)
                     }}
                 >
                     Find solution
                 </button>
-                <Solution solution={solution} itersForSolution={itersForSolution} deviations={deviations}/>
+                <Solution solution={solution} itersForSolution={itersForSolution} deviations={deviations} hasConvenged={hasConvenge}/>
             </div>
         </div>
 

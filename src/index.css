@@ -11,7 +11,7 @@ html, body, #root {
 }
 
 .field {
-    @apply border rounded-lg  w-10 text-right p-0.5 text-lg border-gray-800 focus:outline-1 focus:outline-blue-700;
+    @apply border rounded-lg  w-[70px] text-right p-0.5 text-lg border-gray-800 focus:outline-1 focus:outline-blue-700;
 }
 
 .section {

@@ -1,18 +1,16 @@
 type Props = {
     solution: number[] | null
     itersForSolution: number
-    deviations: number[] | null
+    deviations: number[] | null,
+    hasConvenged: boolean
 }
 
-export function Solution({ solution, itersForSolution, deviations }: Props) {
+export function Solution({ solution, itersForSolution, deviations, hasConvenged }: Props) {
     if (!solution || !deviations) return null;
-
-    if (!solution.length) {
-        return <span className="text-lg text-red-500 font-bold">Matrix does not have diagonal dominance</span>
-    }
 
     return (
         <div className="flex flex-col gap-y-3 items-start section mt-5">
+            {!hasConvenged && <span className="text-lg text-red-500 font-bold">Matrix does not have diagonal dominance so answer can be incorrect</span>}
             <label className="text-lg mr-3">Solution:</label>
             <div className="flex gap-x-3">
                 <div className="flex items-center gap-x-1">

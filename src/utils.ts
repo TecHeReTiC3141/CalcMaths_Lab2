@@ -18,19 +18,20 @@ const enforceDiagonalDominance = (A: number[][], b: number[]): void => {
     }
 }
 
-const MAX_ITERATIONS = 2000
+const MAX_ITERATIONS = 1000
 
 const shouldStopIteration = (x: number[], xPrev: number[], eps: number): boolean => {
     return x.every((val, i) => Math.abs(val - xPrev[ i ]) < eps);
 }
 
-type Result = [number[], number, number[]]
+type Result = [number[], number, number[], boolean]
 
 const simpleIterationMethod = (A: number[][], b: number[], x0: number[], eps: number): Result => {
     const C = A.map((row, i) => row.map((val, j) => i === j ? 0 : -val / A[ i ][ i ]));
     const d = b.map((val, i) => val / A[ i ][ i ]);
     const x = [...d];
     let xPrev = [];
+    let deviations: number[] = [];
 
     const n = A.length;
     for (let iter = 0; iter < MAX_ITERATIONS; ++iter) {
@@ -39,11 +40,24 @@ const simpleIterationMethod = (A: number[][], b: number[], x0: number[], eps: nu
             x[i] = d[i] + C[i].reduce((acc, val, j) => acc + val * xPrev[j], 0);
         }
         if (shouldStopIteration(x, xPrev, eps)) {
-            const deviations = x.map((val, i) => Math.abs(val - xPrev[i]))
-            return [x, iter, deviations]
+            deviations = x.map((val, i) => Math.abs(val - xPrev[i]))
+            return [x, iter, deviations, true];
         }
     }
-    return [[], -1, []];
+    return [x, MAX_ITERATIONS, deviations, false];
+}
+
+const UPPER_LIMIT = 10
+const LOWER_LIMIT = -10
+
+const generateRandomMatrix = (setMatrix: (matrix: string[][]) => void, n: number): void => {
+    const matrix = Array.from({ length: n }, () =>
+        Array.from({ length: n + 1 }, () =>
+            parseFloat((Math.random() * 2 * (UPPER_LIMIT - LOWER_LIMIT) + LOWER_LIMIT).toFixed(4)).toString()
+        )
+    );
+
+    setMatrix(matrix);
 }
 
 const calculateEquationSolution = (coeffs: string[][], eps: number): Result => {
@@ -53,4 +67,4 @@ const calculateEquationSolution = (coeffs: string[][], eps: number): Result => {
     return simpleIterationMethod(A, b, new Array(b.length).fill(0), eps);
 }
 
-export { calculateEquationSolution }
+export { calculateEquationSolution, generateRandomMatrix }
