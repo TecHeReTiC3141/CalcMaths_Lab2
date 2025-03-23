@@ -8,5 +8,5 @@ createRoot(document.getElementById('root')!).render(
         <div className="w-full h-full bg-gray-400">
             <App/>
         </div>
-    </StrictMode>,
+    </StrictMode>
 )

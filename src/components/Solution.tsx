@@ -1,52 +1,48 @@
-type Props = {
-    solution: number[][] | null
-    itersForSolution: number
-    deviations: number[][] | null,
-}
+import { SolutionData } from "../utils.ts";
 
-export function Solution({ solution, itersForSolution, deviations }: Props) {
-    if (!solution || !deviations) return null;
+type SolutionProps = {
+    solution: SolutionData;
+};
 
-    if (!solution.length) {
-        return <span className="text-lg text-red-500 font-bold">Matrix does not have diagonal dominance so answer can be incorrect</span>
-    }
+export function Solution ({ solution }: SolutionProps) {
+    if (solution.iters.length === 0) return <p className="text-gray-500 text-center">No iterations available.</p>;
+
+    const columns = ['iters', ...Object.keys(solution.iters[0])];
 
     return (
-        <div className="flex flex-col gap-y-3 items-start section mt-5">
-            <label className="text-lg mr-3">Solution:</label>
-            <div className="overflow-x-auto">
-            <table className="table-auto border-collapse border border-gray-800">
-                <thead>
-                    <tr>
-                        <th className="border border-gray-800 px-4 py-2">Iteration</th>
-                        {solution[0].map((_, i) => (
-                            <th key={i} className="border border-gray-800 px-4 py-2">x{i + 1}</th>
-                        ))}
-                        {deviations[0] && deviations[0].map((_, i) => (
-                            <th key={`d${i + 1}`} className="border border-gray-800 px-4 py-2">d{i + 1}</th>
-                        ))}
+      <div className="p-6 bg-white rounded-xl shadow-md">
+          <h2 className="text-xl font-semibold text-center text-gray-800 mb-4">Solution</h2>
+          <p className="text-center text-lg text-gray-700 mb-4">
+              <span className="font-medium text-blue-600">Answer:</span> {solution.ans}
+              <span className="font-medium text-blue-600 ml-2">Iterations:</span> {solution.iters.length}
+          </p>
+          <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-300 shadow-md rounded-lg">
+                  <thead className="bg-blue-500 text-white">
+                  <tr>
+                      {columns.map((col) => (
+                        <th key={col} className="px-4 py-2 text-left uppercase tracking-wider">
+                            {col}
+                        </th>
+                      ))}
+                  </tr>
+                  </thead>
+                  <tbody>
+                  {solution.iters.map((iter, rowIndex) => (
+                    <tr key={rowIndex} className="border-b hover:bg-gray-100 transition">
+                      <td key={rowIndex} className="px-4 py-2 text-gray-800">
+                        {rowIndex + 1}
+                      </td>
+                      {columns.slice(1).map((col) => (
+                        <td key={col} className="px-4 py-2 text-gray-800">
+                          {iter[ col ]}
+                        </td>
+                      ))}
                     </tr>
-                </thead>
-                <tbody>
-                    {solution.map((_, iterationIndex) => (
-                        <tr key={iterationIndex}>
-                            <td className="border border-gray-800 px-4 py-2">{iterationIndex + 1}</td>
-                            {solution[iterationIndex].map((val, colIndex) => (
-                                <td key={`x${colIndex + 1}`} className="border border-gray-800 px-4 py-2">
-                                    {val}
-                                </td>
-                            ))}
-                            {deviations[iterationIndex].map((deviationVal, colIndex) => (
-                                <td key={`d${colIndex + 1}`} className="border border-gray-800 px-4 py-2">
-                                    {deviationVal}
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-            <label className="text-lg mt-6 mr-3">Iterations: {itersForSolution}</label>
-        </div>
+                  ))}
+                  </tbody>
+              </table>
+          </div>
+      </div>
     );
 };
