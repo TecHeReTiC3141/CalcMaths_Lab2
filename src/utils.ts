@@ -1,5 +1,12 @@
 // Метод хорд
-import { Equation, EquationSolvingMethod, MethodFunction, ValidationError } from "./types.ts";
+import {
+  Equation,
+  EquationSolvingMethod,
+  MethodFunction,
+  SystemEquation,
+  SystemEquationOption,
+  ValidationError
+} from "./types.ts";
 import { SEGMENTS } from "./constants.ts";
 
 const derivative = (x: number, equation: Equation) => (equation(x + 1e-6) - equation(x)) / 1e-6;
@@ -79,7 +86,7 @@ const newtonMethod: MethodFunction<NewtonMethodIter> = (equation, a, b, toleranc
     return firstAns
   }
 
-  const secondAns =  calc( isLeftSuits ? b : a)
+  const secondAns = calc(isLeftSuits ? b : a)
   if (secondAns.ans >= a && secondAns.ans <= b) {
     return secondAns
   }
@@ -94,7 +101,6 @@ type IterationMethodIter = {
   diff: number
 }
 
-// Метод простой итерации
 const iterationMethod: MethodFunction<IterationMethodIter> = (equation, a, b, tolerance) => {
   const maxDerivative = Math.max(...Array.from({ length: SEGMENTS }, (_, i) =>
     Math.abs(derivative(a + (i / (SEGMENTS - 1)) * (b - a), equation))
@@ -140,12 +146,49 @@ const methods: Record<EquationSolvingMethod, MethodFunction<SecantMethodIter | N
   [ EquationSolvingMethod.Iteration ]: iterationMethod
 };
 
-export type SolutionData = ReturnType<MethodFunction<SecantMethodIter | NewtonMethodIter | IterationMethodIter>>
+type NewtonSystemIter = {
+  xK: string
+  xNext: string
+  diff: number
+}
 
-export const solveEquation = (method: EquationSolvingMethod, equation: Equation, a: number, b: number, accuracy: number, initial?: number): SolutionData | ValidationError => {
+export type SystemSolutionFunction = (system: SystemEquationOption, initX: number, initY: number, accuracy: number) => {
+  iters: NewtonSystemIter[]
+  ans: [number, number]
+  equations: SystemEquationOption['equations']
+}
+
+export type SolutionData = ReturnType<MethodFunction<SecantMethodIter | NewtonMethodIter | IterationMethodIter> | SystemSolutionFunction>
+
+export const solveEquation = (method: EquationSolvingMethod, equation: Equation, a: number, b: number, accuracy: number): SolutionData | ValidationError => {
   if (!hasSingleRoot(equation, a, b)) {
     return ValidationError.notSingleRoot
   }
-  return methods[ method ](equation, a, b, accuracy, initial);
+  return methods[ method ](equation, a, b, accuracy);
+}
 
+export const solveSystem: SystemSolutionFunction = (system: SystemEquationOption, initX: number, initY: number, accuracy: number) => {
+  const { phi1, phi2 } = system;
+  const iters: NewtonSystemIter[] = [];
+  let x = initX;
+  let y = initY;
+  let xPrev = Infinity;
+  let yPrev = Infinity;
+  let curIter = 0;
+  while (curIter++ < MAX_ITERS && Math.sqrt((x - xPrev) ** 2 + (y - yPrev) ** 2) > accuracy) {
+    xPrev = x;
+    yPrev = y;
+    x = phi1(xPrev, yPrev);
+    y = phi2(xPrev, yPrev);
+    iters.push({
+      xK: `(${xPrev.toFixed(4)}, ${yPrev.toFixed(4)})`,
+      xNext: `(${x.toFixed(4)}, ${y.toFixed(4)})`,
+      diff: Math.sqrt((x - xPrev) ** 2 + (y - yPrev) ** 2)
+    });
+  }
+  return { iters, equations: [system.phi1, system.phi2], ans: [x, y] };
+}
+
+export const checkIfValidationError = (s: ValidationError | SolutionData): s is ValidationError => {
+  return Object.values(ValidationError).includes(s as ValidationError)
 }

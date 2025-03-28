@@ -13,7 +13,7 @@ export function Solution ({ solution }: SolutionProps) {
       <div className="p-6 bg-white rounded-xl shadow-md">
           <h2 className="text-xl font-semibold text-center text-gray-800 mb-4">Solution</h2>
           <p className="text-center text-lg text-gray-700 mb-4">
-              <span className="font-medium text-blue-600">Answer:</span> {solution.ans}
+              <span className="font-medium text-blue-600">Answer:</span> {JSON.stringify(solution.ans)}
               <span className="font-medium text-blue-600 ml-2">Iterations:</span> {solution.iters.length}
           </p>
           <div className="overflow-x-auto">

@@ -1,4 +1,4 @@
-import { EquationOption, EquationSolvingMethod, SolvingMethodOption } from "./types.ts";
+import { EquationOption, EquationSolvingMethod, SolvingMethodOption, SystemEquationOption } from "./types.ts";
 
 export const predefinedEquations: EquationOption[] = [
     {
@@ -42,4 +42,25 @@ export const predefinedMethods: SolvingMethodOption[] = [
     },
 ]
 
+
+export const predefinedSystemEquations: SystemEquationOption[] = [
+    {
+        equations: [
+            (x: number, y: number) => x ** 2 + y ** 2 - 1,
+            (x: number, y: number) => y - Math.sin(x),
+        ],
+        label: 'x^2 + y^2 - 1; y - sin(x)',
+        phi1: (x: number, y: number) => Math.sqrt(1 - y ** 2),
+        phi2: (x: number, y: number) => Math.sin(x)
+    },
+    {
+        equations: [
+            (x: number, y: number) => 0.1 * x ** 2 + x + 0.2 * y ** 2 - 0.3,
+            (x: number, y: number) => 0.2 * x ** 2 + y + 0.1 * x * y - 0.7
+        ],
+        label: '0.1x^2 + x + 0.2y^2 - 0.3; 0.2x^2 + y + 0.1xy - 0.7',
+        phi1: (x: number, y: number) => 0.3 - 0.1 * x ** 2 - 0.2 * y ** 2,
+        phi2: (x: number, y: number) => 0.7 - 0.2 * x ** 2 - 0.1 * x * y
+    }
+]
 export const SEGMENTS = 250;

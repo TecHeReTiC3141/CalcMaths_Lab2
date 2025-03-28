@@ -5,6 +5,15 @@ export type EquationOption = {
     label: string
 }
 
+export type SystemEquation = (x: number, y: number) => number;
+
+export type SystemEquationOption = {
+    equations: [SystemEquation, SystemEquation]
+    label: string
+    phi1: SystemEquation
+    phi2: SystemEquation
+}
+
 type MethodFunctionAnswer<T> = {
     iters: T[]
     ans: number

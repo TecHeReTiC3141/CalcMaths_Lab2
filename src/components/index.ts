@@ -1,4 +1,5 @@
 export * from './Equation'
 export * from './Solution'
 export * from './Error'
-export * from './CoeffUploader'
+export * from './InputUploader'
+export * from './Graph'
