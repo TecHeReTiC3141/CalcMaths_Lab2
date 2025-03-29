@@ -1,7 +1,8 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Scatter } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Scatter, ScatterChart } from 'recharts';
 import { Equation } from "../types.ts";
 import { SEGMENTS } from "../constants.ts";
 import { SystemSolutionFunction } from "../utils.ts";
+import { memo, ReactNode } from "react";
 
 type EquationGraphProps = {
   equation: Equation;
@@ -35,36 +36,42 @@ export function  EquationGraph({ equation, a, b, ans }: EquationGraphProps) {
 
 type SystemGraphProps = ReturnType<SystemSolutionFunction>
 
-export function SystemGraph({ ans, equations }: SystemGraphProps) {
-  const SPACE = 10
+const SPACE = 5
+
+const generateCurveData = (equation: (x: number, y: number) => number, xRange: number[]) => {
+  const data = [];
+  for (const x of xRange) {
+    for (let y = -SPACE; y <= SPACE; y += SPACE / SEGMENTS) {
+      if (Math.abs(equation(x, y)) < 0.075) { // ищем точки, удовлетворяющие уравнению
+        data.push({ x, y, r: 1 });
+      }
+    }
+  }
+  return data;
+};
+
+const xRange = Array.from({ length: SEGMENTS }, (_, i) => -SPACE + i * 2 * SPACE / SEGMENTS)
+
+export const SystemGraph = memo(function SystemGraph({ ans, equations }: SystemGraphProps) {
   if (!ans || !equations) return null
-
-  const leftBorderX = ans[0] - SPACE
-  const rightBorderX = ans[0] + SPACE
-  const leftBorderY = ans[1] - SPACE
-  const rightBorderY = ans[1] + SPACE
-
-  const equation1Data = Array.from({ length: SEGMENTS }, (_, i) => {
-    const y = leftBorderY + (i / (SEGMENTS - 1)) * (rightBorderY - leftBorderY);
-    return { x: equations[0](ans[0], y), y };
-  });
-
-  const equation2Data = Array.from({ length: SEGMENTS }, (_, i) => {
-    const x = leftBorderX + (i / (SEGMENTS - 1)) * (rightBorderX - leftBorderX);
-    return { x, y: equations[1](x, ans[1])};
-  });
-
-  console.log("DATA", equation1Data,  equation2Data)
+  const curve1 = generateCurveData(equations[0], xRange);
+  const curve2 = generateCurveData(equations[1], xRange);
 
   return (
-    <ComposedChart width={500} height={300}>
-      <CartesianGrid />
-      <XAxis dataKey="x" />
-      <YAxis dataKey="y" />
-      <Line type="monotone" dataKey="x" stroke="#8884d8" data={equation1Data} dot={false} />
-      <Line type="monotone" dataKey="y" stroke="green" data={equation2Data} dot={false} />
-      <Scatter data={[{ x: ans[0], y: ans[1] }]} r={5} fill="red" />
-      <Tooltip />
-    </ComposedChart>
-  );
-}
+      <ScatterChart width={600} height={400}>
+        <CartesianGrid />
+        <XAxis type="number" dataKey="x" name="X" />
+        <YAxis type="number" dataKey="y" name="Y" />
+        <Tooltip  />
+
+        {/* Первая кривая */}
+        <Scatter name="Equation 1" data={curve1} fill="blue" />
+
+        {/* Вторая кривая */}
+        <Scatter name="Equation 2" data={curve2} fill="red" />
+
+        {/* Точка пересечения */}
+        <Scatter name="Intersection" data={[ { x: ans[ 0 ], y: ans[ 1 ] }]} fill="green" shape="star" />
+      </ScatterChart>
+  ) as ReactNode;
+})

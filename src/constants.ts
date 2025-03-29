@@ -63,4 +63,4 @@ export const predefinedSystemEquations: SystemEquationOption[] = [
         phi2: (x: number, y: number) => 0.7 - 0.2 * x ** 2 - 0.1 * x * y
     }
 ]
-export const SEGMENTS = 250;
+export const SEGMENTS = 400;

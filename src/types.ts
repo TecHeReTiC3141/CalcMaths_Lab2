@@ -20,7 +20,7 @@ type MethodFunctionAnswer<T> = {
     a: number
     b: number
     equation: Equation
-}
+} | ValidationError
 
 export type MethodFunction<T extends Record<string, number>> = (
     equation: Equation,
@@ -42,5 +42,6 @@ export type SolvingMethodOption = {
 }
 
 export enum ValidationError {
-    notSingleRoot = 'notSingleRoot'
+    notSingleRoot = 'notSingleRoot',
+    noConvenge = 'noConvenge'
 }

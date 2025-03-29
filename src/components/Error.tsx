@@ -5,8 +5,10 @@ type ErrorProps = {
 }
 
 const errorTexts: Record<ValidationError, string> = {
-  [ValidationError.notSingleRoot]: "There is not exactly one root in the interval"
+  [ValidationError.notSingleRoot]: "There is not exactly one root in the interval",
+  [ValidationError.noConvenge]: "No convenge for this function so answer will be incorrect",
 }
+
 
 export const Error = ({ error }: ErrorProps) => {
   return (

@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Solution, Error, InputUploader, SystemGraph } from "./components";
+import { Solution, Error, InputUploader, SystemGraph, EquationGraph } from "./components";
 import { predefinedEquations, predefinedMethods, predefinedSystemEquations } from "./constants.ts";
 import { EquationSolvingMethod, ValidationError } from "./types.ts";
 import { checkIfValidationError, SolutionData, solveEquation, solveSystem } from "./utils.ts";
-import Graph, { EquationGraph } from "./components/Graph.tsx";
 import clsx from "clsx";
 
 type Tab = 'equation' | 'system'
@@ -91,7 +90,7 @@ export default function App() {
             <div className="flex flex-col gap-y-3 section">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg mb-1 font-bold">System of Equations</h3>
-                <p className="text-sm text-gray-600">Newton method</p>
+                <p className="text-sm text-gray-600">Simple iteration method</p>
               </div>
               <div className="flex gap-x-3 items-center">
                 <select defaultValue={undefined} value={currentSystem}
@@ -132,6 +131,7 @@ export default function App() {
               onClick={() => {
                 if (!isDataValid) return
                 let result;
+                setError(undefined)
                 if (currentTab === 'equation') {
                   const selectedEquation = predefinedEquations.find(({ label }) => label === currentEquation).equation
                   result = solveEquation(solutionMethod!, selectedEquation, leftBorder!, rightBorder!, accuracy)
@@ -145,7 +145,6 @@ export default function App() {
                   setSolution(undefined)
                 } else {
                   setSolution(result)
-                  setError(undefined)
                 }
               }}
             >

@@ -3,7 +3,6 @@ import {
   Equation,
   EquationSolvingMethod,
   MethodFunction,
-  SystemEquation,
   SystemEquationOption,
   ValidationError
 } from "./types.ts";
@@ -109,13 +108,13 @@ const iterationMethod: MethodFunction<IterationMethodIter> = (equation, a, b, to
   let curIter = 0;
 
   const iters: IterationMethodIter[] = []
-  let lambda = 1 / maxDerivative;
+  let lambda = Math.abs(1 / maxDerivative);
 
   const isDerivPositive = Array.from({ length: SEGMENTS }, (_, i) =>
     derivative(a + (i / (SEGMENTS - 1)) * (b - a), equation)
   ).every((n) => n > 0)
 
-  if (!isDerivPositive) {
+  if (isDerivPositive) {
     lambda *= -1
   }
   const phi = (x: number) => x + lambda * equation(x);
@@ -131,12 +130,13 @@ const iterationMethod: MethodFunction<IterationMethodIter> = (equation, a, b, to
       diff: Math.abs(x - xPrev)
     })
   }
+  if (isNaN(x)) return ValidationError.noConvenge
   return { iters, ans: x, a, b, equation };
 };
 
 const hasSingleRoot = (equation: Equation, a: number, b: number): boolean => {
   const values = Array.from({ length: SEGMENTS }, (_, i) => equation(a + (i / (SEGMENTS - 1)) * (b - a)));
-  const signChanges = values.slice(1).filter((val, i) => val * values[ i ] < 0).length;
+  const signChanges = values.slice(1).filter((val, i) => val * values[ i ] < 0 || values[i] === 0).length;
   return signChanges === 1;
 };
 
@@ -156,11 +156,11 @@ export type SystemSolutionFunction = (system: SystemEquationOption, initX: numbe
   iters: NewtonSystemIter[]
   ans: [number, number]
   equations: SystemEquationOption['equations']
-}
+} | ValidationError
 
 export type SolutionData = ReturnType<MethodFunction<SecantMethodIter | NewtonMethodIter | IterationMethodIter> | SystemSolutionFunction>
 
-export const solveEquation = (method: EquationSolvingMethod, equation: Equation, a: number, b: number, accuracy: number): SolutionData | ValidationError => {
+export const solveEquation = (method: EquationSolvingMethod, equation: Equation, a: number, b: number, accuracy: number): SolutionData => {
   if (!hasSingleRoot(equation, a, b)) {
     return ValidationError.notSingleRoot
   }
@@ -186,7 +186,8 @@ export const solveSystem: SystemSolutionFunction = (system: SystemEquationOption
       diff: Math.sqrt((x - xPrev) ** 2 + (y - yPrev) ** 2)
     });
   }
-  return { iters, equations: [system.phi1, system.phi2], ans: [x, y] };
+  if (isNaN(x) || isNaN(y)) return ValidationError.noConvenge
+  return { iters, equations: system.equations, ans: [x, y] };
 }
 
 export const checkIfValidationError = (s: ValidationError | SolutionData): s is ValidationError => {
