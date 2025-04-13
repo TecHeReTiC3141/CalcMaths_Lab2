@@ -1,6 +1,6 @@
-import { EquationOption, EquationSolvingMethod, SolvingMethodOption, SystemEquationOption } from "./types.ts";
+import { EquationOption, IntegralSolvingMethod, SolvingMethodOption } from "./types.ts";
 
-export const predefinedEquations: EquationOption[] = [
+export const predefinedFunctions: EquationOption[] = [
     {
         equation: (x: number) => x ** 3 - 2 * x - 5,
         label: 'x^3 - 2x - 5'
@@ -24,43 +24,33 @@ export const predefinedEquations: EquationOption[] = [
     {
         equation: (x: number) => Math.log(x) + x,
         label: 'ln(x) + x'
+    },
+    {
+        equation: (x: number) => 1 / x,
+        label: '1 / x'
     }
 ]
 
 export const predefinedMethods: SolvingMethodOption[] = [
     {
-        label: 'Chord method',
-        value: EquationSolvingMethod.Chord
+        label: 'Left rectangles',
+        value: IntegralSolvingMethod.RectangleLeft
     },
     {
-        label: 'Newton method',
-        value: EquationSolvingMethod.Newton
+        label: 'Right rectangles',
+        value: IntegralSolvingMethod.RectangleRight
     },
     {
-        label: 'Simple iteration method',
-        value: EquationSolvingMethod.Iteration
+        label: 'Center rectangle',
+        value: IntegralSolvingMethod.RectangleCenter
+    },    {
+        label: 'Trapezoid',
+        value: IntegralSolvingMethod.Trapezoid
+    },    {
+        label: 'Simpson (parabolas)',
+        value: IntegralSolvingMethod.Simpson
     },
 ]
 
-
-export const predefinedSystemEquations: SystemEquationOption[] = [
-    {
-        equations: [
-            (x: number, y: number) => x ** 2 + y ** 2 - 1,
-            (x: number, y: number) => y - Math.sin(x),
-        ],
-        label: 'x^2 + y^2 - 1; y - sin(x)',
-        phi1: (x: number, y: number) => Math.sqrt(1 - y ** 2),
-        phi2: (x: number, y: number) => Math.sin(x)
-    },
-    {
-        equations: [
-            (x: number, y: number) => 0.1 * x ** 2 + x + 0.2 * y ** 2 - 0.3,
-            (x: number, y: number) => 0.2 * x ** 2 + y + 0.1 * x * y - 0.7
-        ],
-        label: '0.1x^2 + x + 0.2y^2 - 0.3; 0.2x^2 + y + 0.1xy - 0.7',
-        phi1: (x: number, y: number) => 0.3 - 0.1 * x ** 2 - 0.2 * y ** 2,
-        phi2: (x: number, y: number) => 0.7 - 0.2 * x ** 2 - 0.1 * x * y
-    }
-]
-export const SEGMENTS = 400;
+export const INITIAL_SEGMENTS = 4
+export const SEGMENTS = 10000

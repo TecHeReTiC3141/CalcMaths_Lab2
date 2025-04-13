@@ -1,5 +1,4 @@
 import { checkIfValidationError, SolutionData } from "../utils.ts";
-import { ValidationError } from "../types.ts";
 
 type SolutionProps = {
     solution: SolutionData;
@@ -16,7 +15,7 @@ export function Solution ({ solution }: SolutionProps) {
           <h2 className="text-xl font-semibold text-center text-gray-800 mb-4">Solution</h2>
           <p className="text-center text-lg text-gray-700 mb-4">
               <span className="font-medium text-blue-600">Answer:</span> {JSON.stringify(solution.ans)}
-              <span className="font-medium text-blue-600 ml-2">Iterations:</span> {solution.iters.length}
+              <span className="font-medium text-blue-600 ml-2">Segments for solution:</span> {solution.segments}
           </p>
           <div className="overflow-x-auto">
               <table className="min-w-full border border-gray-300 shadow-md rounded-lg">

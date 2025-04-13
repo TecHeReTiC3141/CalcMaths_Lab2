@@ -1,193 +1,234 @@
 // Метод хорд
-import {
-  Equation,
-  EquationSolvingMethod,
-  MethodFunction,
-  SystemEquationOption,
-  ValidationError
-} from "./types.ts";
-import { SEGMENTS } from "./constants.ts";
+import { Equation, IntegralSolvingMethod, MethodFunction, ValidationError } from "./types.ts";
+import { INITIAL_SEGMENTS, SEGMENTS } from "./constants.ts";
 
 const derivative = (x: number, equation: Equation) => (equation(x + 1e-6) - equation(x)) / 1e-6;
 
 const secondDerivative = (x: number, equation: Equation) =>
   (equation(x + 1e-6) - 2 * equation(x) + equation(x - 1e-6)) / (1e-6 ** 2);
 
-type SecantMethodIter = {
-  b: number
-  fB: number
-  xk: number
-  fXk: number
-  xNext: number
-  diff: number
+const rectangleLeftMethod = (equation: Equation, a: number, b: number, segmentCount: number) => {
+  const segmentLength = (b - a) / segmentCount
+  const data = Array.from({ length: segmentCount },
+    (_, i) => a + segmentLength * i
+  );
+
+  return segmentLength * data.reduce((acc, x) => acc + equation(x), 0)
 }
-const MAX_ITERS = 2000
 
-const chordMethod: MethodFunction<SecantMethodIter> = (equation, a, b, tolerance) => {
-  const fA = equation(a);
-  const fSecondDerivA = secondDerivative(a, equation);
-  const isLeftFixed = fA * fSecondDerivA > 0;
+const rectangleRightMethod = (equation: Equation, a: number, b: number, segmentCount: number) => {
+  const segmentLength = (b - a) / segmentCount
+  const data = Array.from({ length: segmentCount },
+    (_, i) => a + (i + 1) * segmentLength
+  );
 
-  let x0 = isLeftFixed ? b : a;
-  let x1 = Infinity;
-  const iters: SecantMethodIter[] = []
-  for (let i = 0; i < MAX_ITERS; ++i) {
-    x1 = x0 - equation(x0) * ((isLeftFixed ? a : b) - x0) / (equation(isLeftFixed ? a : b) - equation(x0))
-    iters.push({
-      b,
-      fB: equation(b),
-      xk: x0,
-      fXk: equation(x0),
-      xNext: x1,
-      diff: Math.abs(x1 - x0)
-    })
-    if (Math.abs(equation(x0)) <= tolerance) break;
-    x0 = x1
-  }
-  return { iters, ans: x1, a, b, equation };
-};
-
-// Метод Ньютона
-type NewtonMethodIter = {
-  xk: number
-  fXk: number
-  derivXk: number
-  xNext: number
-  diff: number
+  return segmentLength * data.reduce((acc, x) => acc + equation(x), 0)
 }
-const newtonMethod: MethodFunction<NewtonMethodIter> = (equation, a, b, tolerance) => {
-  const fA = equation(a);
-  const fSecondDerivA = secondDerivative(a, equation);
-  const isLeftSuits = fA * fSecondDerivA > 0;
 
-  const x = isLeftSuits ? a : b;
+const rectangleCenterMethod = (equation: Equation, a: number, b: number, segmentCount: number) => {
+  const segmentLength = (b - a) / segmentCount
+  const data = Array.from({ length: segmentCount },
+    (_, i) => a + (i + 0.5) * segmentLength
+  );
 
-  const calc = (x: number) => {
-    let curIter = 0
-    const iters: NewtonMethodIter[] = []
-    let temp
-    while (curIter++ < MAX_ITERS && Math.abs(equation(x)) > tolerance) {
-      temp = x - equation(x) / derivative(x, equation)
-      iters.push({
-        xk: x,
-        fXk: equation(x),
-        derivXk: derivative(x, equation),
-        xNext: temp,
-        diff: Math.abs(temp - x),
-      })
-      x = temp;
+  return segmentLength * data.reduce((acc, x) => acc + equation(x), 0)
+}
+const trapezoidMethod = (equation: Equation, a: number, b: number, segmentCount: number) => {
+  const segmentLength = (b - a) / segmentCount
+  const data = Array.from({ length: segmentCount + 1 },
+    (_, i) => a + i * segmentLength
+  );
+
+  return segmentLength / 2 * (data[ 0 ] + data[ data.length - 1 ] + 2 * data.slice(1, -1).reduce((acc, x) => acc + equation(x), 0))
+}
+
+const simpsonMethod = (equation: Equation, a: number, b: number, segmentCount: number) => {
+  const segmentLength = (b - a) / segmentCount
+  const data = Array.from({ length: segmentCount + 1 },
+    (_, i) => a + i * segmentLength
+  );
+  let evenSum = 0
+  let oddSum = 0
+  data.slice(1, -1).forEach((point, index) => {
+    if (index % 2 === 0) {
+      oddSum += equation(point)
+    } else {
+      evenSum += equation(point)
     }
-    return { iters, ans: x, a, b, equation };
-  }
-
-  const firstAns = calc(x)
-  if (firstAns.ans >= a && firstAns.ans <= b) {
-    return firstAns
-  }
-
-  const secondAns = calc(isLeftSuits ? b : a)
-  if (secondAns.ans >= a && secondAns.ans <= b) {
-    return secondAns
-  }
-
-  return calc((a + b) / 2)
-};
-
-type IterationMethodIter = {
-  xk: number
-  xNext: number
-  fXk: number
-  diff: number
+  })
+  return segmentLength / 3 * (data[ 0 ] + data[ data.length - 1 ] + 4 * oddSum + 2 * evenSum)
 }
 
-const iterationMethod: MethodFunction<IterationMethodIter> = (equation, a, b, tolerance) => {
-  const maxDerivative = Math.max(...Array.from({ length: SEGMENTS }, (_, i) =>
-    Math.abs(derivative(a + (i / (SEGMENTS - 1)) * (b - a), equation))
-  ));
+const methods: Record<IntegralSolvingMethod, MethodFunction> = {
+  [ IntegralSolvingMethod.RectangleLeft ]: rectangleLeftMethod,
+  [ IntegralSolvingMethod.RectangleRight ]: rectangleRightMethod,
+  [ IntegralSolvingMethod.RectangleCenter ]: rectangleCenterMethod,
+  [ IntegralSolvingMethod.Trapezoid ]: trapezoidMethod,
+  [ IntegralSolvingMethod.Simpson ]: simpsonMethod
+};
 
-  let curIter = 0;
+type SolutionIter = {
+  segments: number
+  curI: number
+  nextI: number
+}
 
-  const iters: IterationMethodIter[] = []
-  let lambda = Math.abs(1 / maxDerivative);
+export type SolutionData = {
+  ans: number
+  segments: number
+  iters: SolutionIter[]
+}
 
-  const isDerivPositive = Array.from({ length: SEGMENTS }, (_, i) =>
-    derivative(a + (i / (SEGMENTS - 1)) * (b - a), equation)
-  ).every((n) => n > 0)
+const getDiscontinuityPoints = (equation: Equation, a: number, b: number): number[] => {
+  const breakpoints = Array.from<number>({ length: SEGMENTS + 1 })
+    .map((_, index) => a + (b - a) * index / SEGMENTS)
+    .filter((point) => !isFinite(equation(point)))
 
-  if (isDerivPositive) {
-    lambda *= -1
+  return breakpoints
+}
+
+const handleImproperIntegral = (
+  method: IntegralSolvingMethod,
+  equation: Equation,
+  a: number,
+  b: number,
+  accuracy: number,
+  discontinuityPoints: number[]
+): SolutionData | ValidationError => {
+  console.log(`! Found discontinuity points: function is discontinuous or undefined at ${discontinuityPoints}`);
+
+  const EPS = 0.00001;
+  let converges = true;
+
+  for (const bp of discontinuityPoints) {
+    const y1 = tryToCompute(equation, bp - EPS);
+    const y2 = tryToCompute(equation, bp + EPS);
+
+    if (y1 !== null && y2 !== null && (Math.abs(y1 - y2) > EPS || (y1 === y2 && y1 !== null))) {
+      converges = false;
+      break;
+    }
   }
-  const phi = (x: number) => x + lambda * equation(x);
-  let x = a;
-  let xPrev = Infinity;
-  while (curIter++ < MAX_ITERS && Math.abs(x - xPrev) > tolerance) {
-    xPrev = x;
-    x = phi(x);
+
+  if (!converges) {
+    console.log('- Integral does not exist: integral does not converge');
+    return ValidationError.noConvenge;
+  }
+
+  console.log('+ Integral converges');
+
+  let totalIntegral = 0;
+  let totalSegments = 0;
+  const allIters: SolutionIter[] = [];
+
+  // Handle single discontinuity case
+  if (discontinuityPoints.length === 1) {
+    let adjustedA = a;
+    let adjustedB = b;
+
+    if (Math.abs(discontinuityPoints[ 0 ] - a) < EPS) {
+      adjustedA = a + EPS;
+    } else if (Math.abs(discontinuityPoints[ 0 ] - b) < EPS) {
+      adjustedB = b - EPS;
+    }
+
+    const result = computeRegularIntegral(method, equation, adjustedA, adjustedB, accuracy);
+    if (checkIfValidationError(result)) return result;
+
+    totalIntegral += result.ans;
+    totalSegments += result.segments;
+    allIters.push(...result.iters);
+  }
+  // Handle multiple discontinuities
+  else {
+    // Sort discontinuities and add endpoints
+    const points = [ a, ...discontinuityPoints.sort((x, y) => x - y), b ];
+
+    // Integrate between each pair of adjacent points
+    for (let i = 0; i < points.length - 1; i++) {
+      const left = points[ i ];
+      const right = points[ i + 1 ];
+
+      // Check if endpoints are discontinuities
+      const leftAdjusted = discontinuityPoints.includes(left) ? left + EPS : left;
+      const rightAdjusted = discontinuityPoints.includes(right) ? right - EPS : right;
+
+      // Only compute if the adjusted interval is valid
+      if (leftAdjusted < rightAdjusted) {
+        const result = computeRegularIntegral(method, equation, leftAdjusted, rightAdjusted, accuracy);
+        if (checkIfValidationError(result)) return result;
+
+        totalIntegral += result.ans;
+        totalSegments += result.segments;
+        allIters.push(...result.iters);
+      }
+    }
+  }
+
+  return {
+    ans: totalIntegral,
+    segments: totalSegments,
+    iters: allIters
+  };
+};
+
+// Helper function to safely compute function values
+const tryToCompute = (equation: Equation, x: number): number | null => {
+  try {
+    const result = equation(x);
+    return isFinite(result) ? result : null;
+  } catch {
+    return null;
+  }
+};
+
+const computeRegularIntegral = (
+  method: IntegralSolvingMethod,
+  equation: Equation,
+  a: number,
+  b: number,
+  accuracy: number
+): SolutionData | ValidationError => {
+  const currentMethod = methods[ method ];
+  let currentSegments = INITIAL_SEGMENTS;
+  const k = method === IntegralSolvingMethod.Simpson ? 4 : 2;
+  const iters: SolutionIter[] = [];
+
+  const MAX_ITERS = 20
+  let iter = 0
+
+  while (iter++ < MAX_ITERS) {
+    const currentValue = currentMethod(equation, a, b, currentSegments);
+    const nextValue = currentMethod(equation, a, b, currentSegments * 2);
+
     iters.push({
-      xk: xPrev,
-      xNext: x,
-      fXk: equation(xPrev),
-      diff: Math.abs(x - xPrev)
-    })
-  }
-  if (isNaN(x)) return ValidationError.noConvenge
-  return { iters, ans: x, a, b, equation };
-};
-
-const hasSingleRoot = (equation: Equation, a: number, b: number): boolean => {
-  const values = Array.from({ length: SEGMENTS }, (_, i) => equation(a + (i / (SEGMENTS - 1)) * (b - a)));
-  const signChanges = values.slice(1).filter((val, i) => val * values[ i ] < 0 || values[i] === 0).length;
-  return signChanges === 1;
-};
-
-const methods: Record<EquationSolvingMethod, MethodFunction<SecantMethodIter | NewtonMethodIter | IterationMethodIter>> = {
-  [ EquationSolvingMethod.Chord ]: chordMethod,
-  [ EquationSolvingMethod.Newton ]: newtonMethod,
-  [ EquationSolvingMethod.Iteration ]: iterationMethod
-};
-
-type NewtonSystemIter = {
-  xK: string
-  xNext: string
-  diff: number
-}
-
-export type SystemSolutionFunction = (system: SystemEquationOption, initX: number, initY: number, accuracy: number) => {
-  iters: NewtonSystemIter[]
-  ans: [number, number]
-  equations: SystemEquationOption['equations']
-} | ValidationError
-
-export type SolutionData = ReturnType<MethodFunction<SecantMethodIter | NewtonMethodIter | IterationMethodIter> | SystemSolutionFunction>
-
-export const solveEquation = (method: EquationSolvingMethod, equation: Equation, a: number, b: number, accuracy: number): SolutionData => {
-  if (!hasSingleRoot(equation, a, b)) {
-    return ValidationError.notSingleRoot
-  }
-  return methods[ method ](equation, a, b, accuracy);
-}
-
-export const solveSystem: SystemSolutionFunction = (system: SystemEquationOption, initX: number, initY: number, accuracy: number) => {
-  const { phi1, phi2 } = system;
-  const iters: NewtonSystemIter[] = [];
-  let x = initX;
-  let y = initY;
-  let xPrev = Infinity;
-  let yPrev = Infinity;
-  let curIter = 0;
-  while (curIter++ < MAX_ITERS && Math.sqrt((x - xPrev) ** 2 + (y - yPrev) ** 2) > accuracy) {
-    xPrev = x;
-    yPrev = y;
-    x = phi1(xPrev, yPrev);
-    y = phi2(xPrev, yPrev);
-    iters.push({
-      xK: `(${xPrev.toFixed(4)}, ${yPrev.toFixed(4)})`,
-      xNext: `(${x.toFixed(4)}, ${y.toFixed(4)})`,
-      diff: Math.sqrt((x - xPrev) ** 2 + (y - yPrev) ** 2)
+      segments: currentSegments,
+      curI: currentValue,
+      nextI: nextValue
     });
+
+    if (Math.abs(currentValue - nextValue) / (2 ** k - 1) < accuracy) {
+      return {
+        ans: nextValue,
+        segments: currentSegments * 2,
+        iters
+      };
+    }
+
+    currentSegments *= 2;
   }
-  if (isNaN(x) || isNaN(y)) return ValidationError.noConvenge
-  return { iters, equations: system.equations, ans: [x, y] };
+
+  return ValidationError.noConvenge
+};
+
+export const solveEquation = (method: IntegralSolvingMethod, equation: Equation, a: number, b: number, accuracy: number): SolutionData | ValidationError => {
+  const discontinuityPoints = getDiscontinuityPoints(equation, a, b)
+
+  if (discontinuityPoints.length) {
+    return handleImproperIntegral(method, equation, a, b, accuracy, discontinuityPoints)
+  }
+
+  return computeRegularIntegral(method, equation, a, b, accuracy)
 }
 
 export const checkIfValidationError = (s: ValidationError | SolutionData): s is ValidationError => {
